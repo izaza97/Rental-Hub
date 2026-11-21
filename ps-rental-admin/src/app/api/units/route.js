@@ -1,44 +1,48 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { dbAll, dbGet, dbRun, sqlNow } from '@/lib/db';
+import { dbAll, dbGet, dbRun, sqlNow, isUniqueViolation, isForeignKeyViolation, serverError } from '@/lib/db';
 import { getAuthUser, canRole, logActivity } from '@/lib/auth';
 
 export async function GET(request) {
-  const user = getAuthUser(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const user = getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { searchParams } = new URL(request.url);
-  const q = (searchParams.get('q') || '').trim();
-  const status = (searchParams.get('status') || '').trim();
-  const psType = (searchParams.get('ps_type') || '').trim();
+    const { searchParams } = new URL(request.url);
+    const q = (searchParams.get('q') || '').trim();
+    const status = (searchParams.get('status') || '').trim();
+    const psType = (searchParams.get('ps_type') || '').trim();
 
-  const where = [];
-  const params = [];
-  if (q) {
-    where.push('(name LIKE ? OR code LIKE ?)');
-    params.push(`%${q}%`, `%${q}%`);
-  }
-  if (status) {
-    where.push('status = ?');
-    params.push(status);
-  }
-  if (psType) {
-    where.push('ps_type = ?');
-    params.push(psType);
-  }
+    const where = [];
+    const params = [];
+    if (q) {
+      where.push(`(name ILIKE $${params.length + 1} OR code ILIKE $${params.length + 1})`);
+      params.push(`%${q}%`);
+    }
+    if (status) {
+      where.push(`status = $${params.length + 1}`);
+      params.push(status);
+    }
+    if (psType) {
+      where.push(`ps_type = $${params.length + 1}`);
+      params.push(psType);
+    }
 
-  const sql = `SELECT * FROM units${where.length ? ' WHERE ' + where.join(' AND ') : ''} ORDER BY id ASC`;
-  const units = await dbAll(sql, params);
-  return NextResponse.json({ units });
+    const sql = `SELECT * FROM units${where.length ? ' WHERE ' + where.join(' AND ') : ''} ORDER BY id ASC`;
+    const units = await dbAll(sql, params);
+    return NextResponse.json({ units });
+  } catch (err) {
+    return NextResponse.json(serverError(err, 'units GET'), { status: 500 });
+  }
 }
 
 export async function POST(request) {
-  const user = getAuthUser(request);
-  if (!user || !canRole(user.role, 'units')) {
-    return NextResponse.json({ error: 'Akses ditolak (RBAC).' }, { status: 403 });
-  }
-
   try {
+    const user = getAuthUser(request);
+    if (!user || !canRole(user.role, 'units')) {
+      return NextResponse.json({ error: 'Akses ditolak (RBAC).' }, { status: 403 });
+    }
+
     const body = await request.json();
     const code = String(body.code || '').trim().toUpperCase();
     const name = String(body.name || '').trim();
@@ -53,26 +57,29 @@ export async function POST(request) {
     }
 
     await dbRun(
-      'INSERT INTO units (code, name, ps_type, room_type, price_per_hour, status, features, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO units (code, name, ps_type, room_type, price_per_hour, status, features, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
       [code, name, ps_type, room_type, price_per_hour, status, features, sqlNow()]
     );
     await logActivity(user.username, 'Tambah Unit', `${name} (${code}) - ${ps_type} - Rp${price_per_hour}/jam`);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: 'Kode unit sudah digunakan atau data tidak valid.' }, { status: 400 });
+    if (isUniqueViolation(err)) {
+      return NextResponse.json({ error: 'Kode unit sudah digunakan.' }, { status: 400 });
+    }
+    return NextResponse.json(serverError(err, 'units POST'), { status: 400 });
   }
 }
 
 export async function PUT(request) {
-  const user = getAuthUser(request);
-  if (!user || !canRole(user.role, 'units')) {
-    return NextResponse.json({ error: 'Akses ditolak (RBAC).' }, { status: 403 });
-  }
-
   try {
+    const user = getAuthUser(request);
+    if (!user || !canRole(user.role, 'units')) {
+      return NextResponse.json({ error: 'Akses ditolak (RBAC).' }, { status: 403 });
+    }
+
     const body = await request.json();
     const id = Number(body.id);
-    const existing = await dbGet('SELECT * FROM units WHERE id = ?', [id]);
+    const existing = await dbGet('SELECT * FROM units WHERE id = $1', [id]);
     if (!existing) return NextResponse.json({ error: 'Unit tidak ditemukan.' }, { status: 404 });
 
     const code = String(body.code ?? existing.code).trim().toUpperCase();
@@ -84,31 +91,41 @@ export async function PUT(request) {
     const features = String(body.features ?? existing.features ?? '').trim();
 
     await dbRun(
-      'UPDATE units SET code = ?, name = ?, ps_type = ?, room_type = ?, price_per_hour = ?, status = ?, features = ? WHERE id = ?',
+      'UPDATE units SET code = $1, name = $2, ps_type = $3, room_type = $4, price_per_hour = $5, status = $6, features = $7 WHERE id = $8',
       [code, name, ps_type, room_type, price_per_hour, status, features, id]
     );
     await logActivity(user.username, 'Ubah Unit', `${name} (${code}) → Status: ${status}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: 'Gagal memperbarui unit: kode mungkin duplikat.' }, { status: 400 });
+    if (isUniqueViolation(err)) {
+      return NextResponse.json({ error: 'Gagal memperbarui unit: kode mungkin duplikat.' }, { status: 400 });
+    }
+    return NextResponse.json(serverError(err, 'units PUT'), { status: 400 });
   }
 }
 
 export async function DELETE(request) {
-  const user = getAuthUser(request);
-  if (!user || !canRole(user.role, 'deleteMaster')) {
-    return NextResponse.json({ error: 'Role Anda tidak memiliki izin hapus master (NFR-07).' }, { status: 403 });
-  }
+  try {
+    const user = getAuthUser(request);
+    if (!user || !canRole(user.role, 'deleteMaster')) {
+      return NextResponse.json({ error: 'Role Anda tidak memiliki izin hapus master (NFR-07).' }, { status: 403 });
+    }
 
-  const { searchParams } = new URL(request.url);
-  const id = Number(searchParams.get('id'));
-  const unit = await dbGet('SELECT * FROM units WHERE id = ?', [id]);
-  if (!unit) return NextResponse.json({ error: 'Unit tidak ditemukan.' }, { status: 404 });
-  if (unit.status === 'Disewa') {
-    return NextResponse.json({ error: 'Unit sedang Disewa, tidak dapat dihapus.' }, { status: 400 });
-  }
+    const { searchParams } = new URL(request.url);
+    const id = Number(searchParams.get('id'));
+    const unit = await dbGet('SELECT * FROM units WHERE id = $1', [id]);
+    if (!unit) return NextResponse.json({ error: 'Unit tidak ditemukan.' }, { status: 404 });
+    if (unit.status === 'Disewa') {
+      return NextResponse.json({ error: 'Unit sedang Disewa, tidak dapat dihapus.' }, { status: 400 });
+    }
 
-  await dbRun('DELETE FROM units WHERE id = ?', [id]);
-  await logActivity(user.username, 'Hapus Unit', `${unit.name} (${unit.code})`);
-  return NextResponse.json({ ok: true });
+    await dbRun('DELETE FROM units WHERE id = $1', [id]);
+    await logActivity(user.username, 'Hapus Unit', `${unit.name} (${unit.code})`);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (isForeignKeyViolation(err)) {
+      return NextResponse.json({ error: 'Unit masih tercatat pada transaksi, tidak dapat dihapus.' }, { status: 400 });
+    }
+    return NextResponse.json(serverError(err, 'units DELETE'), { status: 500 });
+  }
 }

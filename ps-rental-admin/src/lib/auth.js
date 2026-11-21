@@ -76,10 +76,11 @@ export function getAuthUser(request) {
 export async function logActivity(username, action, detail = '') {
   try {
     await dbRun(
-      'INSERT INTO activity_logs (username, action, detail, created_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO activity_logs (username, action, detail, created_at) VALUES ($1, $2, $3, $4)',
       [username || 'system', action, detail, sqlNow()]
     );
   } catch (err) {
-    console.error('logActivity error:', err);
+    // Audit trail tidak boleh menjatuhkan request utama
+    console.error('logActivity error:', err?.message || err);
   }
 }

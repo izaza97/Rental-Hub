@@ -1,68 +1,77 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { dbAll, sqlNow } from '@/lib/db';
+import { dbAll, dbGet, sqlNow, serverError } from '@/lib/db';
 import { getAuthUser } from '@/lib/auth';
 
+// Refactor serverless-friendly: agregasi dihitung di PostgreSQL
+// (sebelumnya seluruh tabel transactions dimuat ke memori lalu di-loop di JS).
 export async function GET(request) {
-  const user = getAuthUser(request);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const user = getAuthUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const units = await dbAll('SELECT * FROM units ORDER BY id ASC');
-  const transactions = await dbAll('SELECT * FROM transactions ORDER BY id DESC');
-  const pendingRequests = await dbAll("SELECT * FROM game_requests WHERE status = 'Menunggu' ORDER BY id DESC");
-
-  const statusCounts = { Tersedia: 0, Disewa: 0, Maintenance: 0 };
-  for (const u of units) {
-    statusCounts[u.status] = (statusCounts[u.status] || 0) + 1;
-  }
-
-  const nowStr = sqlNow();
-  const todayPrefix = nowStr.slice(0, 10);
-  const monthPrefix = nowStr.slice(0, 7);
-
-  let todayCount = 0;
-  let todayRevenue = 0;
-  let monthCount = 0;
-  let monthRevenue = 0;
-
-  for (const t of transactions) {
-    const dt = String(t.created_at || '');
-    const amt = Number(t.total || 0);
-    if (dt.startsWith(todayPrefix)) {
-      todayCount += 1;
-      todayRevenue += amt;
-    }
-    if (dt.startsWith(monthPrefix)) {
-      monthCount += 1;
-      monthRevenue += amt;
-    }
-  }
-
-  // Grafik 7 hari terakhir
-  const dailySeries = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 86400000);
+    // Batas waktu dihitung di aplikasi (zona waktu yang sama dengan nilai yang ditulis sqlNow())
+    const nowStr = sqlNow();
+    const todayStart = `${nowStr.slice(0, 10)} 00:00:00`;
+    const monthStart = `${nowStr.slice(0, 7)}-01 00:00:00`;
+    const d7 = new Date(Date.now() - 6 * 86400000);
     const pad = (n) => String(n).padStart(2, '0');
-    const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const label = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-    const rev = transactions
-      .filter((t) => String(t.created_at || '').startsWith(key))
-      .reduce((acc, t) => acc + Number(t.total || 0), 0);
-    dailySeries.push({ key, label, revenue: rev });
+    const weekStart = `${d7.getFullYear()}-${pad(d7.getMonth() + 1)}-${pad(d7.getDate())} 00:00:00`;
+
+    const [statusRows, agg, dailyRows, activeRentals, recentTransactions, pending] = await Promise.all([
+      // FR-4: breakdown status unit
+      dbAll('SELECT status, COUNT(*) AS jumlah FROM units GROUP BY status'),
+      // FR-5 & FR-6: transaksi & pendapatan hari ini / bulan ini
+      dbGet(
+        `SELECT
+           COUNT(*) FILTER (WHERE created_at >= $1) AS today_count,
+           COALESCE(SUM(total) FILTER (WHERE created_at >= $1), 0) AS today_revenue,
+           COUNT(*) FILTER (WHERE created_at >= $2) AS month_count,
+           COALESCE(SUM(total) FILTER (WHERE created_at >= $2), 0) AS month_revenue
+         FROM transactions`,
+        [todayStart, monthStart]
+      ),
+      // Grafik 7 hari terakhir
+      dbAll(
+        `SELECT to_char(created_at, 'YYYY-MM-DD') AS key, COALESCE(SUM(total), 0) AS revenue
+         FROM transactions
+         WHERE created_at >= $1 AND created_at < $2
+         GROUP BY 1`,
+        [weekStart, `${nowStr.slice(0, 10)} 23:59:59`]
+      ),
+      // Sesi yang masih berjalan (belum dikembalikan)
+      dbAll('SELECT * FROM transactions WHERE return_time IS NULL ORDER BY id DESC'),
+      dbAll('SELECT * FROM transactions ORDER BY id DESC LIMIT 8'),
+      dbGet("SELECT COUNT(*) AS c FROM game_requests WHERE status = 'Menunggu'"),
+    ]);
+
+    const statusCounts = { Tersedia: 0, Disewa: 0, Maintenance: 0 };
+    for (const row of statusRows) {
+      statusCounts[row.status] = Number(row.jumlah) || 0;
+    }
+
+    const dailyMap = new Map(dailyRows.map((r) => [r.key, Number(r.revenue) || 0]));
+    const dailySeries = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const label = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+      dailySeries.push({ key, label, revenue: dailyMap.get(key) || 0 });
+    }
+
+    return NextResponse.json({
+      totalUnits: statusRows.reduce((sum, r) => sum + (Number(r.jumlah) || 0), 0),
+      statusCounts,
+      todayCount: Number(agg?.today_count) || 0,
+      todayRevenue: Number(agg?.today_revenue) || 0,
+      monthCount: Number(agg?.month_count) || 0,
+      monthRevenue: Number(agg?.month_revenue) || 0,
+      dailySeries,
+      activeRentals,
+      recentTransactions,
+      pendingGameRequests: Number(pending?.c) || 0,
+    });
+  } catch (err) {
+    return NextResponse.json(serverError(err, 'dashboard GET'), { status: 500 });
   }
-
-  const activeRentals = transactions.filter((t) => !t.return_time);
-
-  return NextResponse.json({
-    totalUnits: units.length,
-    statusCounts,
-    todayCount,
-    todayRevenue,
-    monthCount,
-    monthRevenue,
-    dailySeries,
-    activeRentals,
-    recentTransactions: transactions.slice(0, 8),
-    pendingGameRequests: pendingRequests.length,
-  });
 }

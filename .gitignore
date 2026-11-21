@@ -1,3 +1,8 @@
 node_modules/
 .next/
 .env
+.env.local
+.env*.local
+# Artefak SQLite (muncul saat membuka ps_rental_hub.db)
+*.db-shm
+*.db-wal

@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: false,
   experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3', 'mysql2'],
+    // `pg` (PostgreSQL Supabase) di-require runtime — jangan dibundel webpack
+    serverComponentsExternalPackages: ['pg'],
   },
 };
 

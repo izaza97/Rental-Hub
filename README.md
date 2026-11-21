@@ -1,36 +1,51 @@
-# PS Rental Hub — React & Next.js Edition (2 Website Terpisah + Database SQL)
+# PS Rental Hub — React & Next.js Edition (Supabase PostgreSQL + Vercel)
 ## Sistem Informasi Pengelolaan Rental PlayStation Berbasis Web
 **Kelompok 12 — UNINDRA — Rekayasa Perangkat Lunak (Sesuai SRS v1.0)**
 
 Arsitektur proyek ini dibagi menjadi **3 bagian terpisah**:
 
 ```
-ps-rental-nextjs/
-├── database/                  # 1. DATABASE SQL TERPUSAT
-│   ├── ps_rental_hub.sql      # File import MySQL / MariaDB (phpMyAdmin / XAMPP)
-│   ├── schema.prisma          # Skema ORM Prisma (MySQL / SQLite)
-│   ├── ps_rental_hub.db       # Database SQLite siap pakai tanpa konfigurasi
-│   └── README-DATABASE.md
+Rental-Hub/
+├── database/                              # 1. DATABASE SUPABASE POSTGRESQL
+│   ├── supabase/migrations/0001_init.sql  #    Skema + seed untuk Supabase SQL Editor
+│   ├── scripts/migrate-sqlite-to-supabase.mjs  # Migrasi data SQLite lama
+│   ├── schema.prisma                      #    Skema ORM Prisma (provider postgresql)
+│   ├── ps_rental_hub.sql                  #    (legacy) arsip MySQL lama
+│   └── ps_rental_hub.db                   #    (legacy) SQLite lama — sumber migrasi data
 │
-├── ps-rental-admin/           # 2. WEBSITE ADMIN / BACK-OFFICE (Next.js Port 3001)
-│   ├── package.json
-│   ├── .env.example
-│   └── src/app/...            # FR-1 s/d FR-20, RBAC 4 Role, Bcrypt, Audit Trail
+├── ps-rental-admin/                       # 2. WEBSITE ADMIN / BACK-OFFICE (Next.js Port 3001)
+│   ├── package.json                       #    dependensi: next, pg, bcryptjs
+│   ├── .env.example                       #    DATABASE_URL, SUPABASE_*, AUTH_SECRET
+│   └── src/app/...                        #    FR-1 s/d FR-20, RBAC 4 Role, Bcrypt, Audit Trail
 │
-└── ps-rental-client/          # 3. WEBSITE CLIENT / PELANGGAN (Next.js Port 3000)
-    ├── package.json
-    ├── .env.example
-    └── src/app/...            # Landing, Floor Plan Booking, Home Rental, Game, Member
+├── ps-rental-client/                      # 3. WEBSITE CLIENT / PELANGGAN (Next.js Port 3000)
+│   ├── package.json                       #    dependensi: next, pg
+│   ├── .env.example                       #    DATABASE_URL, SUPABASE_*
+│   └── src/app/...                        #    Landing, Floor Plan Booking, Home Rental, Game, Member
+│
+└── DEPLOYMENT-VERCEL.md                   # Panduan migrasi DB + deploy Vercel (WAJIB DIBACA)
 ```
+
+**Migrasi database:** seluruh sistem kini memakai **PostgreSQL Supabase** via driver `pg`
+(parameterized `$1..$n`, transaksi `dbTx`, error handling terpusat) — driver lama
+`better-sqlite3` (SQLite) dan `mysql2` (MySQL localhost) sudah dihapus.
 
 ---
 
-## Cara Menjalankan di Laptop (Windows / Mac / Linux)
+## Cara Menjalankan di Lokal
 
-### Opsi A — Langsung Jalan Tanpa Setup Server MySQL (Mode SQLite Default)
-Kedua website otomatis membaca & menulis ke file SQL yang sama (`../database/ps_rental_hub.db`):
+1. **Siapkan Supabase** (sekali saja): buat project → SQL Editor → jalankan
+   `database/supabase/migrations/0001_init.sql`.
 
-1. **Jalankan Website Client (Port 3000):**
+2. **Konfigurasi env** — di folder `ps-rental-admin` **dan** `ps-rental-client`:
+   ```bash
+   cp .env.example .env.local
+   # isi DATABASE_URL (Supabase → Settings → Database → Connection string → URI / Pooler)
+   # isi NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+   # isi AUTH_SECRET (admin saja)
+   ```
+
+3. **Jalankan Website Client (Port 3000):**
    ```bash
    cd ps-rental-client
    npm install
@@ -38,7 +53,7 @@ Kedua website otomatis membaca & menulis ke file SQL yang sama (`../database/ps_
    ```
    Buka: `http://localhost:3000`
 
-2. **Jalankan Website Admin (Port 3001) di terminal kedua:**
+4. **Jalankan Website Admin (Port 3001) di terminal kedua:**
    ```bash
    cd ps-rental-admin
    npm install
@@ -46,21 +61,17 @@ Kedua website otomatis membaca & menulis ke file SQL yang sama (`../database/ps_
    ```
    Buka: `http://localhost:3001`
 
+> Data SQLite/MySQL lama? Ikuti **Langkah Migrasi Database** di `DEPLOYMENT-VERCEL.md` (§2).
+
 ---
 
-### Opsi B — Menggunakan MySQL / phpMyAdmin (XAMPP / Laragon — Sesuai SRS 2.4)
-1. Nyalakan **MySQL** di XAMPP / Laragon.
-2. Buka `http://localhost/phpmyadmin` → **Import** file `database/ps_rental_hub.sql`.
-3. Di dalam folder `ps-rental-admin` **dan** `ps-rental-client`, salin `.env.example` menjadi `.env.local`, lalu ubah baris:
-   ```env
-   DB_DRIVER=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_USER=root
-   DB_PASSWORD=
-   DB_NAME=ps_rental_hub
-   ```
-4. Jalankan `npm run dev` pada masing-masing folder!
+## Deploy ke Vercel
+
+Ringkasnya: buat **2 project Vercel** dari repo ini dengan Root Directory
+`ps-rental-admin` dan `ps-rental-client`, lalu isi env `DATABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY` (+ `AUTH_SECRET` untuk admin).
+Langkah lengkap (build settings, pooling, checklist pasca-deploy): **[DEPLOYMENT-VERCEL.md](./DEPLOYMENT-VERCEL.md)**.
 
 ---
 
