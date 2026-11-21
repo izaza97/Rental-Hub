@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { dbGet, dbRun, sqlNow } from '@/lib/db';
+import { dbGet, dbRun, sqlNow, serverError } from '@/lib/db';
 import { signToken, logActivity } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
-    const user = await dbGet('SELECT * FROM users WHERE username = ?', [username]);
+    const user = await dbGet('SELECT * FROM users WHERE username = $1', [username]);
     const valid = user ? await bcrypt.compare(password, user.password_hash) : false;
 
     if (!user || !valid) {
@@ -28,7 +28,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Akun Anda sedang dinonaktifkan. Hubungi Super Admin.' }, { status: 403 });
     }
 
-    await dbRun('UPDATE users SET last_active = ? WHERE id = ?', [sqlNow(), user.id]);
+    await dbRun('UPDATE users SET last_active = $1 WHERE id = $2', [sqlNow(), user.id]);
     const sessionUser = { id: user.id, username: user.username, name: user.name, role: user.role };
     const token = signToken(sessionUser);
 
@@ -45,6 +45,6 @@ export async function POST(request) {
     });
     return res;
   } catch (err) {
-    return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 });
+    return NextResponse.json(serverError(err, 'auth/login'), { status: 500 });
   }
 }

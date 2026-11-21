@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { dbGet, dbRun, sqlNow } from '@/lib/db';
+import { dbGet, dbRun, dbTx, sqlNow, isUniqueViolation, serverError } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 function toSqlDateTime(d) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -24,32 +26,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Nama lengkap dan nomor WhatsApp/HP wajib diisi.' }, { status: 400 });
     }
 
-    const unit = await dbGet('SELECT * FROM units WHERE id = ?', [unitId]);
+    const unit = await dbGet('SELECT * FROM units WHERE id = $1', [unitId]);
     if (!unit) {
       return NextResponse.json({ error: 'Pilih unit PlayStation terlebih dahulu.' }, { status: 400 });
     }
     if (unit.status !== 'Tersedia') {
-      return NextResponse.json({ error: `Maaf, unit ${unit.name} baru saja ${unit.status}. Silakan pilih unit lain.` }, { status: 400 });
+      return NextResponse.json(
+        { error: `Maaf, unit ${unit.name} baru saja ${unit.status}. Silakan pilih unit lain.` },
+        { status: 400 }
+      );
     }
 
-    // Cari atau daftarkan pelanggan otomatis ke tabel customers
-    let cust = await dbGet('SELECT * FROM customers WHERE phone = ?', [phone]);
-    let customerId;
-    if (cust) {
-      customerId = cust.id;
-      if (nik || address) {
-        await dbRun(
-          'UPDATE customers SET nik = COALESCE(?, nik), address = COALESCE(?, address) WHERE id = ?',
-          [nik, address, customerId]
-        );
-      }
-    } else {
-      const cIns = await dbRun(
-        'INSERT INTO customers (name, nik, phone, address, points, created_at) VALUES (?, ?, ?, ?, 0, ?)',
-        [name, nik, phone, address, sqlNow()]
-      );
-      customerId = cIns.lastInsertRowid;
-    }
+    // Cari pelanggan berdasarkan HP (ILIKE tidak perlu — pencocokan nomor tepat)
+    let cust = await dbGet('SELECT * FROM customers WHERE phone = $1', [phone]);
 
     const now = new Date();
     const startStr = toSqlDateTime(now);
@@ -63,7 +52,7 @@ export async function POST(request) {
     const resolvedAddons = [];
     for (const ad of addonsReq) {
       const qty = Math.max(1, Number(ad.qty || 1));
-      const st = await dbGet('SELECT * FROM stock WHERE id = ?', [Number(ad.stock_id)]);
+      const st = await dbGet('SELECT * FROM stock WHERE id = $1', [Number(ad.stock_id)]);
       if (st && st.qty >= qty) {
         const sub = Number(st.price) * qty;
         addonsTotal += sub;
@@ -74,11 +63,11 @@ export async function POST(request) {
     const subtotal = rentSubtotal + addonsTotal;
 
     let discount = 0;
+    let promo = null;
     if (promoCode) {
-      const promo = await dbGet('SELECT * FROM promos WHERE code = ?', [promoCode]);
+      promo = await dbGet('SELECT * FROM promos WHERE code = $1', [promoCode]);
       if (promo) {
         discount = Math.round(subtotal * (Number(promo.discount_percent) / 100));
-        await dbRun('UPDATE promos SET used_count = used_count + 1 WHERE id = ?', [promo.id]);
       }
     }
 
@@ -86,59 +75,90 @@ export async function POST(request) {
     const paymentStatus = paymentMethod === 'cash' ? 'Belum Lunas' : 'Lunas';
     const invoiceCode = (isHomeRental ? 'HOME-' : 'TRX-') + Date.now().toString().slice(-6);
     const source = isHomeRental ? 'Home Rental' : 'Client Online';
-
-    const ins = await dbRun(
-      `INSERT INTO transactions
-        (invoice_code, customer_id, customer_name, customer_phone, unit_id, unit_name, booking_source, start_time, end_time, return_time, duration_hours, price_per_hour, addons_total, subtotal, discount, penalty, total, payment_status, payment_method, created_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, 0, ?, ?, ?, 'client-web', ?)`,
-      [
-        invoiceCode,
-        customerId,
-        name,
-        phone,
-        unit.id,
-        unit.name,
-        source,
-        startStr,
-        endStr,
-        duration,
-        rate,
-        addonsTotal,
-        subtotal,
-        discount,
-        total,
-        paymentStatus,
-        paymentMethod,
-        sqlNow(),
-      ]
-    );
-
-    for (const ad of resolvedAddons) {
-      await dbRun(
-        'INSERT INTO transaction_addons (transaction_id, stock_id, item_name, price, qty, subtotal) VALUES (?, ?, ?, ?, ?, ?)',
-        [ins.lastInsertRowid, ad.stock_id, ad.item_name, ad.price, ad.qty, ad.subtotal]
-      );
-      await dbRun('UPDATE stock SET qty = qty - ?, sold = sold + ? WHERE id = ?', [ad.qty, ad.qty, ad.stock_id]);
-    }
-
-    // Tambah poin member otomatis
     const earnedPoints = Math.max(10, Math.floor(total / 10000) * 10);
-    await dbRun('UPDATE customers SET points = points + ? WHERE id = ?', [earnedPoints, customerId]);
 
-    // Update status unit otomatis jadi Disewa (FR-10)
-    await dbRun("UPDATE units SET status = 'Disewa' WHERE id = ?", [unit.id]);
+    // Satu transaksi DB atomic: pelanggan + transaksi + addon + stok + poin
+    // + status unit + deposit + audit log (aman bila terjadi kegagalan di tengah jalan)
+    const result = await dbTx(async (tx) => {
+      let customerId;
+      if (cust) {
+        customerId = cust.id;
+        if (nik || address) {
+          await tx.run('UPDATE customers SET nik = COALESCE($1, nik), address = COALESCE($2, address) WHERE id = $3', [
+            nik,
+            address,
+            customerId,
+          ]);
+        }
+      } else {
+        const cIns = await tx.run(
+          'INSERT INTO customers (name, nik, phone, address, points, created_at) VALUES ($1, $2, $3, $4, 0, $5) RETURNING id',
+          [name, nik, phone, address, sqlNow()]
+        );
+        customerId = cIns.lastInsertRowid;
+      }
 
-    if (isHomeRental) {
-      await dbRun(
-        "INSERT INTO deposits (invoice_code, unit_name, customer_name, customer_nik, deposit_amount, status, notes, created_at) VALUES (?, ?, ?, ?, 500000, 'Ditahan', ?, ?)",
-        [invoiceCode, unit.name, name, nik || '-', `Alamat antar: ${address || '-'}`, sqlNow()]
+      const ins = await tx.run(
+        `INSERT INTO transactions
+          (invoice_code, customer_id, customer_name, customer_phone, unit_id, unit_name, booking_source, start_time, end_time, return_time, duration_hours, price_per_hour, addons_total, subtotal, discount, penalty, total, payment_status, payment_method, created_by, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, $10, $11, $12, $13, $14, 0, $15, $16, $17, 'client-web', $18)
+          RETURNING id`,
+        [
+          invoiceCode,
+          customerId,
+          name,
+          phone,
+          unit.id,
+          unit.name,
+          source,
+          startStr,
+          endStr,
+          duration,
+          rate,
+          addonsTotal,
+          subtotal,
+          discount,
+          total,
+          paymentStatus,
+          paymentMethod,
+          sqlNow(),
+        ]
       );
-    }
 
-    await dbRun(
-      'INSERT INTO activity_logs (username, action, detail, created_at) VALUES (?, ?, ?, ?)',
-      ['client-web', source, `${invoiceCode} • ${unit.name} dibooking oleh ${name} (${phone}) sebesar Rp${total}`, sqlNow()]
-    );
+      for (const ad of resolvedAddons) {
+        await tx.run(
+          'INSERT INTO transaction_addons (transaction_id, stock_id, item_name, price, qty, subtotal) VALUES ($1, $2, $3, $4, $5, $6)',
+          [ins.lastInsertRowid, ad.stock_id, ad.item_name, ad.price, ad.qty, ad.subtotal]
+        );
+        await tx.run('UPDATE stock SET qty = qty - $1, sold = sold + $1 WHERE id = $2', [ad.qty, ad.stock_id]);
+      }
+
+      if (promo) {
+        await tx.run('UPDATE promos SET used_count = used_count + 1 WHERE id = $1', [promo.id]);
+      }
+
+      // Tambah poin member otomatis
+      await tx.run('UPDATE customers SET points = points + $1 WHERE id = $2', [earnedPoints, customerId]);
+
+      // Update status unit otomatis jadi Disewa (FR-10)
+      await tx.run("UPDATE units SET status = 'Disewa' WHERE id = $1", [unit.id]);
+
+      if (isHomeRental) {
+        await tx.run(
+          "INSERT INTO deposits (invoice_code, unit_name, customer_name, customer_nik, deposit_amount, status, notes, created_at) VALUES ($1, $2, $3, $4, 500000, 'Ditahan', $5, $6)",
+          [invoiceCode, unit.name, name, nik || '-', `Alamat antar: ${address || '-'}`, sqlNow()]
+        );
+      }
+
+      await tx.run('INSERT INTO activity_logs (username, action, detail, created_at) VALUES ($1, $2, $3, $4)', [
+        'client-web',
+        source,
+        `${invoiceCode} • ${unit.name} dibooking oleh ${name} (${phone}) sebesar Rp${total}`,
+        sqlNow(),
+      ]);
+
+      return { id: ins.lastInsertRowid };
+    });
 
     return NextResponse.json({
       ok: true,
@@ -146,8 +166,12 @@ export async function POST(request) {
       total,
       earned_points: earnedPoints,
       payment_status: paymentStatus,
+      id: result.id,
     });
   } catch (err) {
-    return NextResponse.json({ error: err.message || 'Gagal memproses booking.' }, { status: 500 });
+    if (isUniqueViolation(err)) {
+      return NextResponse.json({ error: 'Kode nota bentrok, silakan coba lagi.' }, { status: 409 });
+    }
+    return NextResponse.json(serverError(err, 'booking POST'), { status: 500 });
   }
 }

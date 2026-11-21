@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql" // Bisa diganti "sqlite" untuk mode lokal tanpa server MySQL
+  provider = "postgresql" // Supabase PostgreSQL (migrasi dari mysql/sqlite lokal)
   url      = env("DATABASE_URL")
 }
 

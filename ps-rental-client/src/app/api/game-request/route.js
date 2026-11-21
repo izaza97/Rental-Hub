@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { dbRun, sqlNow } from '@/lib/db';
+import { dbRun, sqlNow, serverError } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
   try {
@@ -14,17 +16,19 @@ export async function POST(request) {
     }
 
     await dbRun(
-      "INSERT INTO game_requests (customer_name, game_title, platform, unit_preference, status, created_at) VALUES (?, ?, ?, ?, 'Menunggu', ?)",
+      "INSERT INTO game_requests (customer_name, game_title, platform, unit_preference, status, created_at) VALUES ($1, $2, $3, $4, 'Menunggu', $5) RETURNING id",
       [customer_name, game_title, platform, unit_preference, sqlNow()]
     );
 
-    await dbRun(
-      'INSERT INTO activity_logs (username, action, detail, created_at) VALUES (?, ?, ?, ?)',
-      ['client-web', 'Request Game Baru', `${customer_name} meminta instalasi ${game_title} (${platform})`, sqlNow()]
-    );
+    await dbRun('INSERT INTO activity_logs (username, action, detail, created_at) VALUES ($1, $2, $3, $4)', [
+      'client-web',
+      'Request Game Baru',
+      `${customer_name} meminta instalasi ${game_title} (${platform})`,
+      sqlNow(),
+    ]);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: err.message || 'Gagal mengirim request.' }, { status: 500 });
+    return NextResponse.json(serverError(err, 'game-request POST'), { status: 500 });
   }
 }
