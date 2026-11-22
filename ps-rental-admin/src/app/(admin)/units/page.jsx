@@ -11,6 +11,7 @@ export default function UnitsPage() {
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [psFilter, setPsFilter] = useState('');
+  const [sort, setSort] = useState('terlama');
   const [form, setForm] = useState(EMPTY_FORM);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
@@ -143,7 +144,7 @@ export default function UnitsPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
-        <div className="grid grid-3" style={{ alignItems: 'end' }}>
+        <div className="grid grid-4" style={{ alignItems: 'end' }}>
           <div>
             <label className="label">Cari Kode / Nama Unit</label>
             <input className="input" value={q} onChange={(e) => { setQ(e.target.value); load(e.target.value, statusFilter, psFilter); }} placeholder="Ketik VIP, REG, VR..." />
@@ -165,6 +166,13 @@ export default function UnitsPage() {
               <option value="PS4">PS4</option>
             </select>
           </div>
+          <div>
+            <label className="label">Urutkan</label>
+            <select className="input" value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="terlama">Terlama</option>
+              <option value="terbaru">Terbaru</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -182,7 +190,12 @@ export default function UnitsPage() {
             </tr>
           </thead>
           <tbody>
-            {units.map((u) => (
+            {[...units]
+              .sort((a, b) => {
+                const cmp = String(a.created_at || '').localeCompare(String(b.created_at || ''));
+                return sort === 'terbaru' ? -cmp || b.id - a.id : cmp || a.id - b.id;
+              })
+              .map((u) => (
               <tr key={u.id}>
                 <td><span className="pill pill-blue">{u.code}</span></td>
                 <td>
