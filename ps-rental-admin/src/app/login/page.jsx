@@ -41,18 +41,18 @@ export default function LoginPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
           <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 20 }}>PS</div>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 20 }}>PS RENTAL HUB — ADMIN</div>
-            <div style={{ fontSize: 12, opacity: 0.85 }}>React + Next.js App Router • Database SQL</div>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(16px, 4.5vw, 20px)' }}>PS RENTAL HUB — ADMIN</div>
+            <div className="login-sub" style={{ fontSize: 12, opacity: 0.85 }}>React + Next.js App Router • Database SQL</div>
           </div>
         </div>
-        <h1 style={{ fontSize: 32, lineHeight: 1.2, fontWeight: 800 }}>Panel Back-Office<br />Pengelolaan Rental PS</h1>
+        <h1 style={{ fontSize: 'clamp(24px, 7vw, 32px)', lineHeight: 1.2, fontWeight: 800 }}>Panel Back-Office<br />Pengelolaan Rental PS</h1>
       </div>
 
-      <div style={{ display: 'grid', placeItems: 'center', padding: 28, background: '#f8fafc' }}>
-        <div className="card" style={{ width: '100%', maxWidth: 420, padding: 32 }}>
+      <div style={{ display: 'grid', placeItems: 'center', padding: 'clamp(16px, 4vw, 28px)', background: '#f8fafc' }}>
+        <div className="card" style={{ width: '100%', maxWidth: 420, padding: 'clamp(22px, 6vw, 32px)' }}>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <div className="logo-icon" style={{ margin: '0 auto 10px', width: 44, height: 44, fontSize: 17 }}>PS</div>
-            <h2 style={{ fontSize: 21, fontWeight: 800 }}>Login Admin / Operator</h2>
+            <h2 style={{ fontSize: 'clamp(18px, 5vw, 21px)', fontWeight: 800 }}>Login Admin / Operator</h2>
             <p style={{ fontSize: 12.5, color: '#64748b', marginTop: 4 }}>Masuk untuk mengakses panel back-office</p>
           </div>
 
