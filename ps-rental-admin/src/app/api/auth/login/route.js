@@ -19,7 +19,7 @@ export async function POST(request) {
     const valid = user ? await bcrypt.compare(password, user.password_hash) : false;
 
     if (!user || !valid) {
-      await logActivity(username || 'unknown', 'Login Gagal', 'Percobaan login ditolak: kredensial tidak valid (FR-2)');
+      await logActivity(username || 'unknown', 'Login Gagal', 'Percobaan login ditolak: kredensial tidak valid');
       return NextResponse.json({ error: 'Username atau password salah. Silakan coba lagi.' }, { status: 401 });
     }
 
@@ -32,7 +32,7 @@ export async function POST(request) {
     const sessionUser = { id: user.id, username: user.username, name: user.name, role: user.role };
     const token = signToken(sessionUser);
 
-    await logActivity(user.username, 'Login', `${user.name} (${user.role}) berhasil login (FR-1)`);
+    await logActivity(user.username, 'Login', `${user.name} (${user.role}) berhasil login`);
 
     const isHttps = (request.headers.get('x-forwarded-proto') || '').includes('https');
     const res = NextResponse.json({ token, user: sessionUser });

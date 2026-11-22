@@ -3,7 +3,7 @@ import ClientNavbar from '@/components/ClientNavbar';
 
 export const metadata = {
   title: 'PS Rental Hub — Portal Pelanggan (Next.js)',
-  description: 'Booking PlayStation PS4, PS5, VIP Room & VR2 secara online - Kelompok 12 UNINDRA',
+  description: 'Booking PlayStation PS4, PS5, VIP Room & VR2 secara online',
 };
 
 export default function RootLayout({ children }) {
@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
               </div>
             </div>
             <div style={{ fontSize: 12.5, color: '#94a3b8', textAlign: 'right' }}>
-              <div>Kelompok 12 — Rekayasa Perangkat Lunak UNINDRA</div>
+              <div>© PS Rental Hub</div>
               <div style={{ marginTop: 4 }}>Buka setiap hari 10:00 – 24:00 WIB</div>
             </div>
           </div>

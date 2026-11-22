@@ -89,7 +89,7 @@ export async function DELETE(request) {
   try {
     const user = getAuthUser(request);
     if (!user || !canRole(user.role, 'deleteMaster')) {
-      return NextResponse.json({ error: 'Role Anda tidak memiliki izin hapus master (NFR-07).' }, { status: 403 });
+      return NextResponse.json({ error: 'Role Anda tidak memiliki izin hapus master.' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

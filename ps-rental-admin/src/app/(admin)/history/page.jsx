@@ -59,15 +59,15 @@ export default function HistoryPage() {
       <div className="card" style={{ marginBottom: 18 }}>
         <div className="grid grid-3" style={{ alignItems: 'end' }}>
           <div>
-            <label className="label">Filter Tanggal (FR-19)</label>
+            <label className="label">Filter Tanggal</label>
             <input type="date" className="input" value={date} onChange={(e) => { setDate(e.target.value); load(e.target.value, customer, status); }} />
           </div>
           <div>
-            <label className="label">Filter Pelanggan / Kode Nota (FR-19)</label>
+            <label className="label">Filter Pelanggan / Kode Nota</label>
             <input className="input" value={customer} onChange={(e) => { setCustomer(e.target.value); load(date, e.target.value, status); }} placeholder="Cari nama pelanggan atau TRX-..." />
           </div>
           <div>
-            <label className="label">Status Pembayaran (FR-17)</label>
+            <label className="label">Status Pembayaran</label>
             <select className="input" value={status} onChange={(e) => { setStatus(e.target.value); load(date, customer, e.target.value); }}>
               <option value="">Semua Status</option>
               <option value="Lunas">Lunas</option>

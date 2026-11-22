@@ -34,7 +34,7 @@ export default function AdminLayout({ children }) {
   }
 
   const navItems = [
-    { section: 'Modul Inti SRS (Tugas 1 & 2)' },
+    { section: 'Modul Utama' },
     { href: '/dashboard', label: 'Dashboard Operasional', icon: '📊', perm: 'dashboard' },
     { href: '/units', label: 'Data PlayStation', icon: '🎮', perm: 'units' },
     { href: '/customers', label: 'Data Pelanggan', icon: '👥', perm: 'customers' },
@@ -55,7 +55,7 @@ export default function AdminLayout({ children }) {
             <div className="logo-icon">PS</div>
             <div className="logo-text">
               <b>PS RENTAL ADMIN</b>
-              <span>Next.js Back-Office • SRS v1.0</span>
+              <span>Next.js Back-Office</span>
             </div>
           </Link>
           <span className="pill pill-blue">🛡️ {user.role}</span>

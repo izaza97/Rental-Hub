@@ -26,7 +26,7 @@ export default function InvoicePage({ params }) {
       <div className="card" style={{ maxWidth: 480, margin: '0 auto', padding: 28 }}>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #1d4ed8', paddingBottom: 14, marginBottom: 14 }}>
           <div style={{ fontWeight: 900, fontSize: 21, color: '#1d4ed8' }}>🎮 PS RENTAL HUB</div>
-          <div style={{ fontSize: 12, color: '#64748b' }}>Bukti Transaksi Resmi (SRS FR-18)</div>
+          <div style={{ fontSize: 12, color: '#64748b' }}>Bukti Transaksi Resmi</div>
           <div style={{ fontWeight: 800, fontSize: 14, marginTop: 6 }}>{trx.invoice_code}</div>
         </div>
 
@@ -34,13 +34,13 @@ export default function InvoicePage({ params }) {
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Tanggal</span><b>{String(trx.created_at).slice(0, 16)}</b></div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Pelanggan</span><b>{trx.customer_name}</b></div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Unit PlayStation</span><b>{trx.unit_name}</b></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Waktu Mulai (FR-15)</span><b>{String(trx.start_time).slice(0, 16)}</b></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Waktu Mulai</span><b>{String(trx.start_time).slice(0, 16)}</b></div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Waktu Selesai</span><b>{String(trx.end_time).slice(0, 16)}</b></div>
           {trx.return_time && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Waktu Kembali</span><b>{String(trx.return_time).slice(0, 16)}</b></div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Durasi × Tarif (FR-16)</span>
+            <span>Durasi × Tarif</span>
             <b>{trx.duration_hours} jam × {rupiah(trx.price_per_hour)}</b>
           </div>
 
@@ -65,10 +65,10 @@ export default function InvoicePage({ params }) {
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', color: Number(trx.penalty) > 0 ? '#dc2626' : '#475569' }}>
-            <span>Denda Keterlambatan (FR-20)</span><b>{rupiah(trx.penalty)}</b>
+            <span>Denda Keterlambatan</span><b>{rupiah(trx.penalty)}</b>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Status & Metode (FR-17)</span><b>{trx.payment_status} ({String(trx.payment_method).toUpperCase()})</b>
+            <span>Status & Metode</span><b>{trx.payment_status} ({String(trx.payment_method).toUpperCase()})</b>
           </div>
         </div>
 

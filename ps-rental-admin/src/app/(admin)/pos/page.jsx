@@ -86,7 +86,7 @@ export default function PosPage() {
     e.preventDefault();
     setErr('');
     if (!selectedUnit) {
-      setErr('Pilih unit PlayStation yang berstatus Tersedia terlebih dahulu (FR-14).');
+      setErr('Pilih unit PlayStation yang berstatus Tersedia terlebih dahulu.');
       return;
     }
     setSaving(true);
@@ -128,7 +128,7 @@ export default function PosPage() {
       <form onSubmit={handleSubmit} className="grid grid-2" style={{ alignItems: 'start' }}>
         <div style={{ display: 'grid', gap: 16 }}>
           <div className="card">
-            <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>1️⃣ Pilih Pelanggan & Unit PlayStation (FR-14, NFR-10)</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>1️⃣ Pilih Pelanggan & Unit PlayStation</h3>
             <label className="label">Pelanggan Master</label>
             <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="0">-- Pelanggan Walk-in (Ketik Nama Manual) --</option>
@@ -144,7 +144,7 @@ export default function PosPage() {
               </div>
             )}
 
-            <label className="label" style={{ marginTop: 14 }}>Klik Unit Tersedia (Unit Disewa/Maintenance terkunci otomatis — NFR-10)</label>
+            <label className="label" style={{ marginTop: 14 }}>Klik Unit Tersedia (Unit Disewa/Maintenance terkunci otomatis)</label>
             <div className="grid grid-2" style={{ gap: 10, marginTop: 8 }}>
               {units.map((u) => {
                 const avail = u.status === 'Tersedia';
@@ -154,7 +154,7 @@ export default function PosPage() {
                     key={u.id}
                     onClick={() => {
                       if (!avail) {
-                        setErr(`Unit ${u.name} berstatus ${u.status} — tidak dapat dipilih (NFR-10).`);
+                        setErr(`Unit ${u.name} berstatus ${u.status} — tidak dapat dipilih.`);
                         return;
                       }
                       setErr('');
@@ -201,18 +201,18 @@ export default function PosPage() {
         </div>
 
         <div className="card" style={{ position: 'sticky', top: 84 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>2️⃣ Waktu Sewa, Denda & Pembayaran (FR-15 s/d FR-20)</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>2️⃣ Waktu Sewa, Denda & Pembayaran</h3>
           <div className="grid grid-2">
             <div>
-              <label className="label">Waktu Mulai Otomatis (FR-15)</label>
+              <label className="label">Waktu Mulai Otomatis</label>
               <input type="datetime-local" className="input" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
             </div>
             <div>
-              <label className="label">Durasi Sewa (Jam) — FR-16</label>
+              <label className="label">Durasi Sewa (Jam)</label>
               <input type="number" step="0.5" min="0.5" className="input" value={duration} onChange={(e) => setDuration(e.target.value)} required />
             </div>
             <div>
-              <label className="label">Waktu Kembali Aktual (Uji Denda FR-20)</label>
+              <label className="label">Waktu Kembali Aktual</label>
               <input type="datetime-local" className="input" value={returnTime} onChange={(e) => setReturnTime(e.target.value)} />
             </div>
             <div>
@@ -220,7 +220,7 @@ export default function PosPage() {
               <input className="input" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="HAPPYHOUR / NEWBIE50" />
             </div>
             <div>
-              <label className="label">Status Pembayaran (FR-17)</label>
+              <label className="label">Status Pembayaran</label>
               <select className="input" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
                 <option value="Lunas">Lunas</option>
                 <option value="Belum Lunas">Belum Lunas</option>
@@ -258,7 +258,7 @@ export default function PosPage() {
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, marginBottom: 8, color: penalty > 0 ? '#dc2626' : '#475569' }}>
-              <span>Denda Keterlambatan (FR-20 / NFR-11):</span>
+              <span>Denda Keterlambatan:</span>
               <b>{rupiah(penalty)}</b>
             </div>
             <hr style={{ border: 'none', borderTop: '1px solid #bfdbfe', margin: '10px 0' }} />
@@ -269,7 +269,7 @@ export default function PosPage() {
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: 13, marginTop: 16 }} disabled={saving}>
-            {saving ? 'Menyimpan Transaksi...' : '💾 Simpan Transaksi & Buka Nota (FR-18)'}
+            {saving ? 'Menyimpan Transaksi...' : '💾 Simpan Transaksi & Buka Nota'}
           </button>
         </div>
       </form>

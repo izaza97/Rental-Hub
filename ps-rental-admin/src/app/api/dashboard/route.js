@@ -19,9 +19,7 @@ export async function GET(request) {
     const weekStart = `${d7.getFullYear()}-${pad(d7.getMonth() + 1)}-${pad(d7.getDate())} 00:00:00`;
 
     const [statusRows, agg, dailyRows, activeRentals, recentTransactions, pending] = await Promise.all([
-      // FR-4: breakdown status unit
       dbAll('SELECT status, COUNT(*) AS jumlah FROM units GROUP BY status'),
-      // FR-5 & FR-6: transaksi & pendapatan hari ini / bulan ini
       dbGet(
         `SELECT
            COUNT(*) FILTER (WHERE created_at >= $1) AS today_count,

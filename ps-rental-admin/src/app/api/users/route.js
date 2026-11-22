@@ -8,7 +8,7 @@ export async function GET(request) {
   try {
     const user = getAuthUser(request);
     if (!user || !canRole(user.role, 'users')) {
-      return NextResponse.json({ error: 'Akses khusus Super Admin (NFR-07).' }, { status: 403 });
+      return NextResponse.json({ error: 'Akses khusus Super Admin.' }, { status: 403 });
     }
     const users = await dbAll('SELECT id, username, name, role, status, last_active, created_at FROM users ORDER BY id ASC');
     return NextResponse.json({ users });
@@ -21,7 +21,7 @@ export async function POST(request) {
   try {
     const user = getAuthUser(request);
     if (!user || !canRole(user.role, 'users')) {
-      return NextResponse.json({ error: 'Akses khusus Super Admin (NFR-07).' }, { status: 403 });
+      return NextResponse.json({ error: 'Akses khusus Super Admin.' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -34,7 +34,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username, nama, dan password (minimal 6 karakter) wajib diisi.' }, { status: 400 });
     }
 
-    const hash = await bcrypt.hash(password, 10); // NFR-06
+    const hash = await bcrypt.hash(password, 10);
     await dbRun(
       "INSERT INTO users (username, password_hash, name, role, status, created_at) VALUES ($1, $2, $3, $4, 'Aktif', $5) RETURNING id",
       [username, hash, name, role, sqlNow()]
@@ -53,7 +53,7 @@ export async function PATCH(request) {
   try {
     const user = getAuthUser(request);
     if (!user || !canRole(user.role, 'users')) {
-      return NextResponse.json({ error: 'Akses khusus Super Admin (NFR-07).' }, { status: 403 });
+      return NextResponse.json({ error: 'Akses khusus Super Admin.' }, { status: 403 });
     }
 
     const body = await request.json();
