@@ -33,7 +33,7 @@ export default function ClientHomePage() {
               <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.16)', padding: '6px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 700, marginBottom: 14 }}>
                 ⚡ Live Ketersediaan Bilik: {availCount} dari {onsiteUnits.length || 12} Unit Tersedia Sekarang!
               </span>
-              <h1 style={{ fontSize: 40, lineHeight: 1.15, fontWeight: 900 }}>
+              <h1 style={{ fontSize: 'clamp(26px, 6vw, 40px)', lineHeight: 1.15, fontWeight: 900 }}>
                 Pengalaman Gaming PS5, VIP OLED & VR2 Terbaik.
               </h1>
               <p style={{ marginTop: 14, fontSize: 15.5, opacity: 0.92, lineHeight: 1.7 }}>
