@@ -47,7 +47,6 @@ export default function HistoryPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Riwayat Transaksi & Pengembalian</h1>
-          <p className="page-sub">FR-17 s/d FR-20: Mencakup transaksi POS Admin dan Booking Online dari Website Client</p>
         </div>
         {user?.role !== 'Pemilik' && (
           <Link href="/pos" className="btn btn-primary btn-sm">➕ Transaksi Baru</Link>

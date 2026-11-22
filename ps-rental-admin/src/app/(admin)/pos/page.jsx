@@ -120,7 +120,6 @@ export default function PosPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Transaksi Rental Baru (POS Kasir)</h1>
-          <p className="page-sub">FR-14 s/d FR-20: Pilih pelanggan & unit tersedia, jam mulai otomatis, hitung durasi, add-ons, diskon & denda</p>
         </div>
       </div>
 

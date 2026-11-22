@@ -80,7 +80,6 @@ export default function UnitsPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Pengelolaan Data PlayStation</h1>
-          <p className="page-sub">FR-7 s/d FR-10: Tambah, ubah, hapus, filter jenis konsol & status — langsung tampil di Website Client</p>
         </div>
       </div>
 

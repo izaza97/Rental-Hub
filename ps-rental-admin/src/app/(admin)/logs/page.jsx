@@ -26,7 +26,6 @@ export default function LogsPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Audit Trail & Log Aktivitas</h1>
-          <p className="page-sub">NFR-08: Mencatat seluruh aktivitas login, login gagal, logout, perubahan data & transaksi client</p>
         </div>
         <button className="btn btn-outline btn-sm" onClick={() => load()}>🔄 Refresh</button>
       </div>

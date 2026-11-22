@@ -54,7 +54,6 @@ export default function UsersPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Manajemen Pengguna & RBAC</h1>
-          <p className="page-sub">NFR-06 (Enkripsi Bcrypt) & NFR-07 (Role-Based Access Control)</p>
         </div>
       </div>
 

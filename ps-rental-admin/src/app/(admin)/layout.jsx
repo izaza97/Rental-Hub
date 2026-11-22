@@ -62,7 +62,7 @@ export default function AdminLayout({ children }) {
           <span style={{ fontSize: 13, color: '#64748b' }}>{user.name}</span>
         </div>
         <button onClick={handleLogout} className="btn btn-danger btn-sm">
-          🚪 Logout (FR-3)
+          🚪 Logout
         </button>
       </header>
 
