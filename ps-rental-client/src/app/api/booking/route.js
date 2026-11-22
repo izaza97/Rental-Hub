@@ -140,7 +140,7 @@ export async function POST(request) {
       // Tambah poin member otomatis
       await tx.run('UPDATE customers SET points = points + $1 WHERE id = $2', [earnedPoints, customerId]);
 
-      // Update status unit otomatis jadi Disewa (FR-10)
+      // Update status unit otomatis jadi Disewa
       await tx.run("UPDATE units SET status = 'Disewa' WHERE id = $1", [unit.id]);
 
       if (isHomeRental) {

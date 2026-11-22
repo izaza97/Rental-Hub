@@ -7,7 +7,7 @@ export async function GET(request) {
   try {
     const user = getAuthUser(request);
     if (!user || !canRole(user.role, 'logs')) {
-      return NextResponse.json({ error: 'Role Anda tidak memiliki akses Audit Trail (NFR-07).' }, { status: 403 });
+      return NextResponse.json({ error: 'Role Anda tidak memiliki akses Audit Trail.' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

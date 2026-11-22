@@ -79,15 +79,15 @@ export async function POST(request) {
       }
     }
     if (!customerName) {
-      return NextResponse.json({ error: 'Pilih pelanggan terdaftar atau isi nama walk-in (FR-14).' }, { status: 400 });
+      return NextResponse.json({ error: 'Pilih pelanggan terdaftar atau isi nama walk-in.' }, { status: 400 });
     }
 
     const unit = await dbGet('SELECT * FROM units WHERE id = $1', [unitId]);
     if (!unit) {
-      return NextResponse.json({ error: 'Pilih unit PlayStation terlebih dahulu (FR-14).' }, { status: 400 });
+      return NextResponse.json({ error: 'Pilih unit PlayStation terlebih dahulu.' }, { status: 400 });
     }
     if (unit.status !== 'Tersedia') {
-      return NextResponse.json({ error: `Unit ${unit.name} sedang ${unit.status} — tidak dapat disewa (NFR-10).` }, { status: 400 });
+      return NextResponse.json({ error: `Unit ${unit.name} sedang ${unit.status} — tidak dapat disewa.` }, { status: 400 });
     }
 
     const startStr = toSqlDateTime(body.start_time) || sqlNow();
@@ -127,7 +127,7 @@ export async function POST(request) {
       const retMs = new Date(returnStr.replace(' ', 'T')).getTime();
       if (retMs > endMs) {
         const lateHours = Math.ceil((retMs - endMs) / 3600000);
-        penalty = lateHours * rate; // FR-20 & NFR-11
+        penalty = lateHours * rate;
       }
     }
 
@@ -185,7 +185,6 @@ export async function POST(request) {
         ]);
       }
 
-      // FR-10: otomatis Disewa saat mulai, Tersedia jika langsung dikembalikan
       await tx.run('UPDATE units SET status = $1 WHERE id = $2', [returnStr ? 'Tersedia' : 'Disewa', unit.id]);
 
       return ins.lastInsertRowid;
@@ -217,7 +216,7 @@ export async function PATCH(request) {
 
     if (action === 'lunasi') {
       await dbRun("UPDATE transactions SET payment_status = 'Lunas' WHERE id = $1", [id]);
-      await logActivity(user.username, 'Pelunasan', `${trx.invoice_code} ditandai Lunas (FR-17)`);
+      await logActivity(user.username, 'Pelunasan', `${trx.invoice_code} ditandai Lunas`);
       return NextResponse.json({ ok: true });
     }
 
@@ -240,7 +239,7 @@ export async function PATCH(request) {
           id,
         ]);
         if (trx.unit_id) {
-          await tx.run("UPDATE units SET status = 'Tersedia' WHERE id = $1", [trx.unit_id]); // FR-10
+          await tx.run("UPDATE units SET status = 'Tersedia' WHERE id = $1", [trx.unit_id]);
         }
       });
 

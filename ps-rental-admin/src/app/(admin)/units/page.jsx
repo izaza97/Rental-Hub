@@ -88,7 +88,7 @@ export default function UnitsPage() {
 
       <div className="card" style={{ marginBottom: 18 }}>
         <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>
-          {form.id > 0 ? `✏️ Ubah Unit: ${form.name} (FR-7)` : '➕ Tambah Unit PlayStation Baru (FR-7)'}
+          {form.id > 0 ? `✏️ Ubah Unit: ${form.name}` : '➕ Tambah Unit PlayStation Baru'}
         </h3>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-3">
@@ -117,7 +117,7 @@ export default function UnitsPage() {
               </select>
             </div>
             <div>
-              <label className="label">Tarif per Jam (Rp) — NFR-09</label>
+              <label className="label">Tarif per Jam (Rp)</label>
               <input className="input" type="number" min="0" value={form.price_per_hour} onChange={(e) => setForm({ ...form, price_per_hour: Number(e.target.value) })} required />
             </div>
             <div>
@@ -145,11 +145,11 @@ export default function UnitsPage() {
       <div className="card" style={{ marginBottom: 18 }}>
         <div className="grid grid-3" style={{ alignItems: 'end' }}>
           <div>
-            <label className="label">Cari Kode / Nama Unit (FR-9)</label>
+            <label className="label">Cari Kode / Nama Unit</label>
             <input className="input" value={q} onChange={(e) => { setQ(e.target.value); load(e.target.value, statusFilter, psFilter); }} placeholder="Ketik VIP, REG, VR..." />
           </div>
           <div>
-            <label className="label">Filter Status (FR-9)</label>
+            <label className="label">Filter Status</label>
             <select className="input" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); load(q, e.target.value, psFilter); }}>
               <option value="">Semua Status</option>
               <option value="Tersedia">Tersedia</option>
@@ -158,7 +158,7 @@ export default function UnitsPage() {
             </select>
           </div>
           <div>
-            <label className="label">Filter Jenis Konsol (FR-9)</label>
+            <label className="label">Filter Jenis Konsol</label>
             <select className="input" value={psFilter} onChange={(e) => { setPsFilter(e.target.value); load(q, statusFilter, e.target.value); }}>
               <option value="">Semua Konsol</option>
               <option value="PS5">PS5</option>
@@ -177,7 +177,7 @@ export default function UnitsPage() {
               <th>Konsol</th>
               <th>Tipe Bilik</th>
               <th>Tarif / Jam</th>
-              <th>Status (FR-8)</th>
+              <th>Status</th>
               <th>Aksi</th>
             </tr>
           </thead>

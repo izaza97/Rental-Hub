@@ -71,7 +71,7 @@ export default function CustomersPage() {
 
       <div className="card" style={{ marginBottom: 18 }}>
         <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>
-          {form.id > 0 ? `✏️ Ubah Data Pelanggan: ${form.name}` : '➕ Tambah Pelanggan Baru (FR-11)'}
+          {form.id > 0 ? `✏️ Ubah Data Pelanggan: ${form.name}` : '➕ Tambah Pelanggan Baru'}
         </h3>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-2">
@@ -100,7 +100,7 @@ export default function CustomersPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 18 }}>
-        <label className="label">Cari Pelanggan berdasarkan Nama / Telepon / NIK (FR-13)</label>
+        <label className="label">Cari Pelanggan berdasarkan Nama / Telepon / NIK</label>
         <input className="input" value={q} onChange={(e) => { setQ(e.target.value); load(e.target.value); }} placeholder="Ketik nama atau nomor HP..." />
       </div>
 
