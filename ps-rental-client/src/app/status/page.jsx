@@ -14,12 +14,38 @@ function getTier(points = 0) {
   return { name: 'Bronze Member', color: '#1d4ed8', perk: 'Kumpulkan poin setiap transaksi Rp10.000 = 10 pts' };
 }
 
+function PrintRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '5px 0', borderBottom: '1px dotted #cbd5e1', fontSize: 13 }}>
+      <span style={{ color: '#475569' }}>{label}</span>
+      <span style={{ fontWeight: 700, textAlign: 'right' }}>{value}</span>
+    </div>
+  );
+}
+
 function StatusContent() {
   const searchParams = useSearchParams();
   const initialQ = searchParams.get('q') || '';
   const [q, setQ] = useState(initialQ);
   const [customer, setCustomer] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [printTrx, setPrintTrx] = useState(null);
+
+  useEffect(() => {
+    if (!printTrx) return undefined;
+    document.body.classList.add('printing-receipt');
+    const timer = setTimeout(() => window.print(), 80);
+    const done = () => {
+      document.body.classList.remove('printing-receipt');
+      setPrintTrx(null);
+    };
+    window.addEventListener('afterprint', done);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('afterprint', done);
+      document.body.classList.remove('printing-receipt');
+    };
+  }, [printTrx]);
 
   async function search(queryStr) {
     const r = await fetch(`/api/status?q=${encodeURIComponent(queryStr || '')}`);
@@ -35,7 +61,8 @@ function StatusContent() {
   const tier = customer ? getTier(customer.points) : null;
 
   return (
-    <div className="container" style={{ paddingTop: 32 }}>
+    <>
+    <div className="container no-print" style={{ paddingTop: 32 }}>
       <div style={{ marginBottom: 22 }}>
         <h1 style={{ fontSize: 28, fontWeight: 900 }}>🧾 Cek Status Booking & Poin Membership</h1>
         <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>
@@ -93,13 +120,51 @@ function StatusContent() {
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 20, fontWeight: 900, color: '#1d4ed8' }}>{rp(t.total)}</div>
                 {Number(t.penalty) > 0 && <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 700 }}>Termasuk Denda {rp(t.penalty)}</div>}
-                <button type="button" onClick={() => window.print()} className="btn btn-white btn-sm" style={{ marginTop: 8 }}>🖨️ Cetak Bukti</button>
+                <button type="button" onClick={() => setPrintTrx(t)} className="btn btn-white btn-sm" style={{ marginTop: 8 }}>🖨️ Cetak Bukti</button>
               </div>
             </div>
           ))
         )}
       </div>
     </div>
+
+    {printTrx && (
+      <div className="print-receipt">
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: 1 }}>🎮 PS RENTAL HUB</div>
+          <div style={{ fontSize: 13, marginTop: 2 }}>Bukti Transaksi Rental PlayStation</div>
+          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Portal Pelanggan — PS4, PS5, VIP Room & VR2</div>
+        </div>
+
+        <div style={{ border: '1.5px dashed #94a3b8', borderRadius: 10, padding: '14px 18px' }}>
+          <PrintRow label="Kode Nota" value={printTrx.invoice_code} />
+          <PrintRow
+            label="Status"
+            value={`${printTrx.payment_status}${printTrx.payment_method ? ` (${String(printTrx.payment_method).toUpperCase()})` : ''}`}
+          />
+          <PrintRow label="Pelanggan" value={`${printTrx.customer_name}${printTrx.customer_phone ? ` — ${printTrx.customer_phone}` : ''}`} />
+          <PrintRow label="Unit" value={printTrx.unit_name} />
+          <PrintRow label="Sumber" value={printTrx.booking_source} />
+          <PrintRow label="Mulai" value={String(printTrx.start_time).slice(0, 16)} />
+          <PrintRow label="Selesai" value={String(printTrx.end_time).slice(0, 16)} />
+          <PrintRow label="Durasi" value={`${printTrx.duration_hours} ${printTrx.booking_source === 'Home Rental' ? 'hari' : 'jam'}`} />
+          <PrintRow label="Tarif" value={`${rp(printTrx.price_per_hour)} / ${printTrx.booking_source === 'Home Rental' ? 'hari' : 'jam'}`} />
+          {Number(printTrx.discount) > 0 && <PrintRow label="Diskon" value={`-${rp(printTrx.discount)}`} />}
+          {Number(printTrx.penalty) > 0 && <PrintRow label="Denda Keterlambatan" value={rp(printTrx.penalty)} />}
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, marginTop: 6, borderTop: '2px solid #0f172a', fontSize: 16, fontWeight: 900 }}>
+            <span>TOTAL</span>
+            <span>{rp(printTrx.total)}</span>
+          </div>
+        </div>
+
+        <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center', marginTop: 14, lineHeight: 1.6 }}>
+          Dicetak pada {new Date().toLocaleString('id-ID')}
+          <br />
+          Terima kasih sudah bermain di PS Rental Hub — simpan bukti ini sebagai arsip.
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

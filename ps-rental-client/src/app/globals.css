@@ -148,6 +148,24 @@ a { color: inherit; text-decoration: none; }
 .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
 .alert-ok { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
 
+.print-receipt { display: none; }
+
+@media print {
+  body.printing-receipt .no-print,
+  body.printing-receipt .navbar,
+  body.printing-receipt footer { display: none !important; }
+  body.printing-receipt main { min-height: 0 !important; }
+  body { background: #fff; }
+  .print-receipt {
+    display: block !important;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 12px;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color: #0f172a;
+  }
+}
+
 @media (max-width: 900px) {
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .navbar { height: auto; padding: 10px 0; }
