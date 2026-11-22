@@ -36,7 +36,6 @@ export default function DashboardPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Dashboard Operasional</h1>
-          <p className="page-sub">Ringkasan real-time database sesuai SRS 4.2 (FR-4, FR-5, FR-6) — tersinkron otomatis dengan Website Client</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={load} className="btn btn-outline btn-sm">🔄 Refresh Data</button>

@@ -46,15 +46,6 @@ export default function LoginPage() {
           </div>
         </div>
         <h1 style={{ fontSize: 32, lineHeight: 1.2, fontWeight: 800 }}>Panel Back-Office<br />Pengelolaan Rental PS</h1>
-        <p style={{ marginTop: 14, opacity: 0.9, fontSize: 14, lineHeight: 1.7 }}>
-          Website Admin ini dipisahkan secara independen dari Website Client dan terhubung langsung ke database SQL terpusat sesuai SRS Kelompok 12 UNINDRA.
-        </p>
-        <div style={{ marginTop: 24, display: 'grid', gap: 8, fontSize: 13 }}>
-          <div>✅ FR-1 s/d FR-20 — 5 Modul Utama SRS Lengkap</div>
-          <div>✅ NFR-06 — Password Bcrypt Hash</div>
-          <div>✅ NFR-07 — Role-Based Access Control (4 Role)</div>
-          <div>✅ NFR-08 — Audit Trail Real-Time di Database</div>
-        </div>
       </div>
 
       <div style={{ display: 'grid', placeItems: 'center', padding: 28, background: '#f8fafc' }}>

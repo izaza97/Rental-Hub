@@ -46,7 +46,6 @@ export default function ExtrasPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Stok Snack, Promo, Deposit & Request Game Client</h1>
-          <p className="page-sub">Fitur tambahan operasional yang tersinkron langsung dengan Website Client</p>
         </div>
       </div>
 

@@ -63,7 +63,6 @@ export default function CustomersPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">Pengelolaan Data Pelanggan</h1>
-          <p className="page-sub">FR-11 s/d FR-13: Master pelanggan (termasuk pelanggan dari booking online Website Client)</p>
         </div>
       </div>
 
