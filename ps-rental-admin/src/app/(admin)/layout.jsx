@@ -50,7 +50,7 @@ export default function AdminLayout({ children }) {
   return (
     <div>
       <header className="header-app">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div className="header-left">
           <Link href="/dashboard" className="logo">
             <div className="logo-icon">PS</div>
             <div className="logo-text">
@@ -59,7 +59,7 @@ export default function AdminLayout({ children }) {
             </div>
           </Link>
           <span className="pill pill-blue">🛡️ {user.role}</span>
-          <span style={{ fontSize: 13, color: '#64748b' }}>{user.name}</span>
+          <span className="header-user">{user.name}</span>
         </div>
         <button onClick={handleLogout} className="btn btn-danger btn-sm">
           🚪 Logout

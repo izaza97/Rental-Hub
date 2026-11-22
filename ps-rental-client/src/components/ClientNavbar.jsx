@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,11 +14,12 @@ const LINKS = [
 
 export default function ClientNavbar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <Link href="/" className="logo">
+        <Link href="/" className="logo" onClick={() => setOpen(false)}>
           <div className="logo-icon">PS</div>
           <div>
             <b style={{ display: 'block', fontSize: 16, color: '#1e3a8a' }}>PS RENTAL HUB</b>
@@ -25,9 +27,24 @@ export default function ClientNavbar() {
           </div>
         </Link>
 
-        <nav className="nav-links">
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-label="Buka menu navigasi"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          {open ? '✕' : '☰'}
+        </button>
+
+        <nav className={`nav-links ${open ? 'open' : ''}`}>
           {LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className={`nav-pill ${pathname === l.href ? 'active' : ''}`}>
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`nav-pill ${pathname === l.href ? 'active' : ''}`}
+              onClick={() => setOpen(false)}
+            >
               {l.label}
             </Link>
           ))}
